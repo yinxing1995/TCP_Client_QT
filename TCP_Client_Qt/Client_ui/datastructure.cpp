@@ -1,15 +1,15 @@
 #include "datastructure.h"
 
-QQueue<QString *> MessageQueue;
+QQueue<QByteArray *> MessageQueue;
 
-void AddtoTail(QString Netmessage)
+void AddtoTail(QByteArray Netmessage)
 {
-    QString *Buffer = new QString;
+    QByteArray *Buffer = new QByteArray;
     *Buffer = Netmessage;
     MessageQueue.enqueue(Buffer);
 }
 
-QString *ProcessMessage()
+QByteArray *ProcessMessage()
 {
     if(MessageQueue.isEmpty())
         return NULL;

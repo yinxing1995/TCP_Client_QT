@@ -4,8 +4,8 @@
 #include <QQueue>
 #include <QString>
 
-void AddtoTail(QString NetMessage);
+void AddtoTail(QByteArray NetMessage);
 
-QString *ProcessMessage();
+QByteArray *ProcessMessage();
 
 #endif // DATASTRUCTURE_H

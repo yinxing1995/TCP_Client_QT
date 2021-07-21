@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "datastructure.h"
+#include <QDateTime>
 #include <QDebug>
 #include <QLabel>
 
@@ -48,7 +49,8 @@ void MainWindow::Load_UI()
     GridLayout -> addWidget(Temp_Humi,1,3,1,1,Qt::AlignCenter);
     GridLayout -> addWidget(Light,2,3,1,1,Qt::AlignCenter);
     GridLayout -> addWidget(Equipment,3,3,1,1,Qt::AlignCenter);
-    GridLayout -> addWidget(Status,4,0,1,4,Qt::AlignLeft|Qt::AlignVCenter);
+    //GridLayout -> addWidget(Status,4,0,1,4,Qt::AlignLeft|Qt::AlignVCenter);
+    GridLayout -> addWidget(Status,4,0,1,4,Qt::AlignLeft);
     GridLayout -> addWidget(StackedWidget,0,0,4,3);
 
     SubTitle1 = new QLabel(WidgetP1);
@@ -62,7 +64,8 @@ void MainWindow::Load_UI()
     SubTitle4 -> setText("Equipment");
 
 
-    //Status->setStyleSheet("background-color:green;");
+    Status->setStyleSheet("background-color:green;");
+    StackedWidget->setStyleSheet("background-color:grey;");
 
     StackedWidget -> addWidget(WidgetP1);
     StackedWidget -> addWidget(WidgetP2);
@@ -126,17 +129,19 @@ UI_Thread::~UI_Thread()
 
 void UI_Thread::run()
 {
-    QString *Message;
+    QByteArray *Message;
     while(1)
     {
         Message = ProcessMessage();
         if(!Message)
         {
+
             msleep(20);
         }
         else
         {
-            UI.Status -> setText(*Message);
+            qDebug() << Message->toHex();
+            UI.Status -> setText(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]") + "Recv:" + Message->toHex(' '));
             delete Message;
             msleep(5);
         }

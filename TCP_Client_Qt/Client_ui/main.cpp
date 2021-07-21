@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     if(1)
     {
         UI_Thread ui_thread;
-        //TCP_Thread net_thread;
+        TCP_Thread net_thread;
         ui_thread.UI.show();
         return a.exec();
     }

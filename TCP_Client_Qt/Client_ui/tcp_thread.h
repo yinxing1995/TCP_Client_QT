@@ -2,11 +2,13 @@
 #define TCP_THREAD_H
 
 #include <QThread>
+//#include <QTcpSocket>
 #include <QAbstractSocket>
 #include <QString>
 
-#define HostAddress "192.168.112.1"
+#define HostAddress "130.61.250.117"
 #define Port 17480
+#define BindInfo "Monitor:001Bind:001"
 
 class QTcpSocket;
 
@@ -19,18 +21,18 @@ public:
     void CreatConnect();
     void ReadData();
     void SendData();
-
-    QString NetMessage;
+    void SendBind();
+    QTcpSocket *tcpSocket;
+    QByteArray NetMessage;
 
 protected:
     void run();
-    void stop();
+    //void stop();
 
 private:
     char *ip_addr, port_num;
-    quint16 blockSize;
-    QTcpSocket *tcpSocket;
-    bool stopped;
+    quint16 blocksize;
+    //bool stopped;
 private slots:
     void DisplayError(QAbstractSocket::SocketError);
 
