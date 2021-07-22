@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QLabel>
 #include <QTextEdit>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -14,6 +15,43 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+}
+
+void MainWindow::Load_PageIR()
+{
+    SubTitle1 = new QLabel(WidgetP1);
+    SubTitle1 -> setText("Infrared Sensor");
+}
+
+void MainWindow::Load_PageTH()
+{
+    SubTitle2 = new QLabel(WidgetP2);
+    SubTitle2 -> setText("Temprature & Humidity");
+}
+
+void MainWindow::Load_PageLI()
+{
+    SubTitle3 = new QLabel(WidgetP3);
+    SubTitle3 -> setText("Light Sensor");
+}
+
+void MainWindow::Load_PageEQ()
+{
+    SubTitle4 = new QLabel(WidgetP4);
+    SubTitle4 -> setText("Equipment");
+}
+
+void MainWindow::Load_Status()
+{
+    Status = new QTextEdit(WidgetStatus);
+    QFont ft;
+    ft.setPointSize(10);
+    Status -> setFont(ft);
+    QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
+    LayoutStatus -> addWidget(Status,0,0,1,1);
+    Status -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Ignored);
+    Status -> document() -> setMaximumBlockCount(50);
+    Status -> setReadOnly(true);
 }
 
 void MainWindow::Load_UI()
@@ -27,7 +65,6 @@ void MainWindow::Load_UI()
 
     StackedWidget = new QStackedWidget(MainWidget);
     GridLayout = new QGridLayout(MainWidget);
-
 
     setCentralWidget(MainWidget);
 
@@ -52,34 +89,19 @@ void MainWindow::Load_UI()
     GridLayout -> addWidget(WidgetStatus,4,0,1,3);
     GridLayout -> addWidget(StackedWidget,0,0,4,3);
 
-    SubTitle1 = new QLabel(WidgetP1);
-    SubTitle2 = new QLabel(WidgetP2);
-    SubTitle3 = new QLabel(WidgetP3);
-    SubTitle4 = new QLabel(WidgetP4);
-
-    Status = new QLabel(WidgetStatus);
-    QFont ft;
-    ft.setPointSize(10);
-    Status -> setFont(ft);
-    QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
-    LayoutStatus -> addWidget(Status,0,0,1,1,Qt::AlignTop);
-    Status -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Ignored);
-    Status -> setWordWrap(true);
-
-
-    SubTitle1 -> setText("Infrared Sensor");
-    SubTitle2 -> setText("Temprature & Humidity");
-    SubTitle3 -> setText("Light sensor");
-    SubTitle4 -> setText("Equipment");
-
-    //Status->setStyleSheet("background-color:yellow;");
-    WidgetStatus->setStyleSheet("background-color:green;");
-    StackedWidget->setStyleSheet("background-color:grey;");
+    WidgetStatus -> setStyleSheet("background-color:green;");
+    StackedWidget-> setStyleSheet("background-color:grey;");
 
     StackedWidget -> addWidget(WidgetP1);
     StackedWidget -> addWidget(WidgetP2);
     StackedWidget -> addWidget(WidgetP3);
     StackedWidget -> addWidget(WidgetP4);
+
+    Load_PageIR();
+    Load_PageTH();
+    Load_PageLI();
+    Load_PageEQ();
+    Load_Status();
 
     connect(Infrared,SIGNAL(clicked()),this,SLOT(SwitchPage_IR()));
     connect(Temp_Humi,SIGNAL(clicked()),this,SLOT(SwitchPage_TH()));
@@ -87,20 +109,6 @@ void MainWindow::Load_UI()
     connect(Equipment,SIGNAL(clicked()),this,SLOT(SwitchPage_EQ()));
 }
 
-void MainWindow::Load_PageIR()
-{}
-
-void MainWindow::Load_PageTH()
-{}
-
-void MainWindow::Load_PageLI()
-{}
-
-void MainWindow::Load_PageEQ()
-{}
-
-void MainWindow::Load_Status()
-{}
 
 void MainWindow::SwitchPage_IR()
 {
@@ -121,6 +129,7 @@ void MainWindow::SwitchPage_EQ()
 {
     StackedWidget -> setCurrentIndex(PAGE_EQ);
 }
+
 
 UI_Thread::UI_Thread()
 {
@@ -147,7 +156,8 @@ void UI_Thread::run()
         else
         {
             qDebug() << Message->toHex();
-            UI.Status -> setText(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->toHex(' '));
+            UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->toHex(' '));
+            UI.Status -> moveCursor(QTextCursor::End);
             delete Message;
             msleep(5);
         }

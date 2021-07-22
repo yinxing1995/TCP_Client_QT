@@ -23,9 +23,10 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    QLabel *Status;
+    QTextEdit *Status;
 
 private:
+    bool wheelmove;
     QLabel *SubTitle1;
     QLabel *SubTitle2;
     QLabel *SubTitle3;
