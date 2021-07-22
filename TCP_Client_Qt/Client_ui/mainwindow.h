@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QLayout>
+#include <QTextEdit>
 
 #define PAGE_IR 0
 #define PAGE_TH 1
@@ -43,6 +44,7 @@ private:
     QWidget *WidgetP2;
     QWidget *WidgetP3;
     QWidget *WidgetP4;
+    QWidget *WidgetStatus;
 
     void Load_UI();
     void Load_PageIR();

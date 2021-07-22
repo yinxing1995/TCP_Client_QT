@@ -2,11 +2,11 @@
 #define TCP_THREAD_H
 
 #include <QThread>
-//#include <QTcpSocket>
 #include <QAbstractSocket>
 #include <QString>
 
 #define HostAddress "130.61.250.117"
+//#define HostAddress "192.168.112.1"
 #define Port 17480
 #define BindInfo "Monitor:001Bind:001"
 

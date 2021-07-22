@@ -3,7 +3,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QLabel>
-
+#include <QTextEdit>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -23,7 +23,7 @@ void MainWindow::Load_UI()
     WidgetP2 = new QWidget;
     WidgetP3 = new QWidget;
     WidgetP4 = new QWidget;
-    Status = new QLabel;
+    WidgetStatus = new QWidget;
 
     StackedWidget = new QStackedWidget(MainWidget);
     GridLayout = new QGridLayout(MainWidget);
@@ -49,8 +49,7 @@ void MainWindow::Load_UI()
     GridLayout -> addWidget(Temp_Humi,1,3,1,1,Qt::AlignCenter);
     GridLayout -> addWidget(Light,2,3,1,1,Qt::AlignCenter);
     GridLayout -> addWidget(Equipment,3,3,1,1,Qt::AlignCenter);
-    //GridLayout -> addWidget(Status,4,0,1,4,Qt::AlignLeft|Qt::AlignVCenter);
-    GridLayout -> addWidget(Status,4,0,1,4,Qt::AlignLeft);
+    GridLayout -> addWidget(WidgetStatus,4,0,1,3);
     GridLayout -> addWidget(StackedWidget,0,0,4,3);
 
     SubTitle1 = new QLabel(WidgetP1);
@@ -58,13 +57,23 @@ void MainWindow::Load_UI()
     SubTitle3 = new QLabel(WidgetP3);
     SubTitle4 = new QLabel(WidgetP4);
 
+    Status = new QLabel(WidgetStatus);
+    QFont ft;
+    ft.setPointSize(10);
+    Status -> setFont(ft);
+    QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
+    LayoutStatus -> addWidget(Status,0,0,1,1,Qt::AlignTop);
+    Status -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Ignored);
+    Status -> setWordWrap(true);
+
+
     SubTitle1 -> setText("Infrared Sensor");
     SubTitle2 -> setText("Temprature & Humidity");
     SubTitle3 -> setText("Light sensor");
     SubTitle4 -> setText("Equipment");
 
-
-    Status->setStyleSheet("background-color:green;");
+    //Status->setStyleSheet("background-color:yellow;");
+    WidgetStatus->setStyleSheet("background-color:green;");
     StackedWidget->setStyleSheet("background-color:grey;");
 
     StackedWidget -> addWidget(WidgetP1);
@@ -91,10 +100,7 @@ void MainWindow::Load_PageEQ()
 {}
 
 void MainWindow::Load_Status()
-{
-    //Status = new QLabel(WidgetStatus);
-    Status -> setText(tr("Initialized"));
-}
+{}
 
 void MainWindow::SwitchPage_IR()
 {
@@ -141,7 +147,7 @@ void UI_Thread::run()
         else
         {
             qDebug() << Message->toHex();
-            UI.Status -> setText(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]") + "Recv:" + Message->toHex(' '));
+            UI.Status -> setText(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->toHex(' '));
             delete Message;
             msleep(5);
         }
