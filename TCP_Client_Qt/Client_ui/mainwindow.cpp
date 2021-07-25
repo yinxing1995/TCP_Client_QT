@@ -144,9 +144,10 @@ UI_Thread::~UI_Thread()
 
 void UI_Thread::run()
 {
-    QByteArray *Message;
+    DataPull *Message;
     while(1)
     {
+        /*
         Message = ProcessMessage();
         if(!Message)
         {
@@ -162,5 +163,17 @@ void UI_Thread::run()
             msleep(5);
         }
         Message = NULL;
+        */
+        Message = ProcessMessage();
+        if(!Message)
+        {
+            msleep(20);
+        }
+        else
+        {
+            UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->Data.toHex(' '));
+            UI.Status -> moveCursor(QTextCursor::End);
+            delete Message;
+        }
     }
 }
