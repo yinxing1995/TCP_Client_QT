@@ -7,6 +7,8 @@
 #include <QStackedWidget>
 #include <QLayout>
 #include <QTextEdit>
+#include <QtCharts>
+#include "datastructure.h"
 
 #define PAGE_IR 0
 #define PAGE_TH 1
@@ -14,6 +16,21 @@
 #define PAGE_EQ 3
 
 class QLabel;
+
+struct Components
+{
+    uint8_t Node;
+    uint8_t Endpoint;
+    QLineSeries *Series;
+    QChart *Chart;
+    QChartView *ChartView;
+    QLabel *Value;
+    QPushButton *Command;
+    bool operator == (const DataforUI &pkt) const
+    {
+        return((Node == pkt.Node)&&(Endpoint == pkt.Endpoint));
+    }
+};
 
 class MainWindow : public QMainWindow
 {
@@ -25,8 +42,17 @@ public:
 
     QTextEdit *Status;
 
+    void Fresh_PageIR(DataPull *, DataforUI);
+    void Fresh_PageTH(DataPull *, DataforUI);
+    void Fresh_PageLI(DataPull *, DataforUI);
+    void Fresh_PageEQ(DataPull *, DataforUI);
+    void Fresh_Status(DataPull *, DataforUI);
+
 private:
-    bool wheelmove;
+    static uint8_t CountforTH;
+    static uint8_t CountforLI;
+    bool wheelmove;//reserved
+
     QLabel *SubTitle1;
     QLabel *SubTitle2;
     QLabel *SubTitle3;
@@ -39,6 +65,11 @@ private:
 
     QStackedWidget *StackedWidget;
     QGridLayout *GridLayout;
+    //QGridLayout *InfraredLayout;
+    //QGridLayout *Temp_HumiLayout;
+    //QGridLayout *LightLayout;
+    //QGridLayout *EquipmentLayout;
+
 
     QWidget *MainWidget;
     QWidget *WidgetP1;
@@ -46,6 +77,9 @@ private:
     QWidget *WidgetP3;
     QWidget *WidgetP4;
     QWidget *WidgetStatus;
+
+    QList<Components> Axislist;
+    struct Components Creat_axis(DataforUI *, uint8_t, QWidget *);
 
     void Load_UI();
     void Load_PageIR();
@@ -70,7 +104,7 @@ public:
     MainWindow UI;
 
 private:
-    void UpdateUI();
+    void UpdateUI(DataPull *);
     void run();
 };
 #endif // MAINWINDOW_H

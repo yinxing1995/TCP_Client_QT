@@ -5,6 +5,38 @@
 #include <QLabel>
 #include <QTextEdit>
 
+extern QList<DataforUI> DataList;
+
+uint8_t MainWindow::CountforTH = 0;
+uint8_t MainWindow::CountforLI = 0;
+
+struct Components MainWindow::Creat_axis(DataforUI *info, uint8_t num, QWidget *subpage)
+{
+    uint8_t node = info -> Node;
+    uint8_t endpoint = info -> Endpoint;
+    Components init{node,endpoint,NULL,NULL,NULL,NULL,NULL};
+    init.Chart = new QChart();
+    init.ChartView = new QChartView(init.Chart);
+    init.Series = new QLineSeries();
+    init.Chart -> addSeries(init.Series);
+
+    QGridLayout *Layout = new QGridLayout(subpage);
+    Layout -> addWidget(init.ChartView,num,0,1,3,Qt::AlignCenter);
+    if(info -> Controllable == READONLY)
+    {
+        init.Value = new QLabel(subpage);
+        Layout -> addWidget(init.Value,num,0,1,1,Qt::AlignCenter);
+    }
+    else
+    {
+        init.Command = new QPushButton(subpage);
+        Layout -> addWidget(init.Command,num,0,1,1,Qt::AlignCenter);
+    }
+
+    Axislist.append(init);
+    return init;
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -25,8 +57,28 @@ void MainWindow::Load_PageIR()
 
 void MainWindow::Load_PageTH()
 {
+    //initial state
     SubTitle2 = new QLabel(WidgetP2);
     SubTitle2 -> setText("Temprature & Humidity");
+
+    //layout loaded
+}
+
+void MainWindow::Fresh_PageTH(DataPull *data,DataforUI info)
+{
+    //check if this node/endpoint exist;if yes fresh,if no creat;
+    if(!DataList.contains(info))
+    {
+        //creat
+        DataList.append(info);
+        //Creat_axis(&info,CountforTH,WidgetP2);
+        CountforTH++;
+    }
+    else
+    {
+        //fresh only
+
+    }
 }
 
 void MainWindow::Load_PageLI()
@@ -130,6 +182,24 @@ void MainWindow::SwitchPage_EQ()
     StackedWidget -> setCurrentIndex(PAGE_EQ);
 }
 
+void UI_Thread::UpdateUI(DataPull *Message)
+{
+    uint8_t node = Message->Node;
+    uint8_t cluster = Message->Cluster;
+    uint8_t endpoint = Message->Endpoint;
+    DataforUI Info{node,cluster,endpoint};
+    switch(cluster)
+    {
+    case Temperature:
+        //UI.Fresh_PageTH(Message,Info);
+        break;
+    case Humidity:
+        //UI.Fresh_PageTH(Message,Info);
+        break;
+    default:
+        break;
+    }
+}
 
 UI_Thread::UI_Thread()
 {
@@ -167,12 +237,14 @@ void UI_Thread::run()
         Message = ProcessMessage();
         if(!Message)
         {
-            msleep(20);
+            msleep(2);
         }
         else
         {
             UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->Data.toHex(' '));
             UI.Status -> moveCursor(QTextCursor::End);
+            msleep(2);
+            //UpdateUI(Message);
             delete Message;
         }
     }

@@ -2,7 +2,6 @@
 #define DATASTRUCTURE_H
 
 #include <QList>
-#include <QDebug>
 
 #define FRAME_FLAG "Frame"
 
@@ -14,6 +13,12 @@ enum Cluster
     InfraredStrength = 0x03,
     Humidity = 0x04,
     OnOff = 0x05,
+};
+
+enum Control
+{
+    READWRITE = 0x00,
+    READONLY =0x01,
 };
 
 class DataPull
@@ -33,9 +38,12 @@ public:
 struct DataforUI
 {
     uint8_t Node;
-    uint8_t Cluster;
     uint8_t Endpoint;
-    uint8_t Controllable;
+    uint8_t Controllable;//reserved
+    bool operator == (const DataforUI &pkt) const
+    {
+        return((Node == pkt.Node)&&(Endpoint == pkt.Endpoint));
+    }
 };
 
 

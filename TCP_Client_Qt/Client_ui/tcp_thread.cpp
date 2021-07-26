@@ -77,7 +77,7 @@ void TCP_Thread::run()
     CreatConnect();
     while(1)
     {
-        ;
+        msleep(2);
     }
     delete tcpSocket;
 }
