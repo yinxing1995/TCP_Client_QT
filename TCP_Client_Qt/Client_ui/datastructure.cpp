@@ -13,7 +13,7 @@
 
 //processing with buffer
 QByteArray Buffer;
-QList<DataforUI> DataList;
+QVector<DataforUI> DataList;
 
 DataPull::DataPull(uint8_t node,uint8_t cluster, uint8_t endpoint, uint8_t control, uint8_t datatype, uint8_t datalength, QByteArray data)
 {

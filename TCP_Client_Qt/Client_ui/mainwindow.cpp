@@ -5,36 +5,54 @@
 #include <QLabel>
 #include <QTextEdit>
 
-extern QList<DataforUI> DataList;
+extern QVector<DataforUI> DataList;
+QVector<Components> Axislist;
 
 uint8_t MainWindow::CountforTH = 0;
 uint8_t MainWindow::CountforLI = 0;
 
-struct Components MainWindow::Creat_axis(DataforUI *info, uint8_t num, QWidget *subpage)
+//void MainWindow::Creat_axis(DataforUI *info, uint8_t num, QWidget *subpage)
+void MainWindow::New_axis(DataforUI *info,QWidget *subpage)
 {
+
     uint8_t node = info -> Node;
     uint8_t endpoint = info -> Endpoint;
     Components init{node,endpoint,NULL,NULL,NULL,NULL,NULL};
+
     init.Chart = new QChart();
     init.ChartView = new QChartView(init.Chart);
     init.Series = new QLineSeries();
-    init.Chart -> addSeries(init.Series);
 
-    QGridLayout *Layout = new QGridLayout(subpage);
-    Layout -> addWidget(init.ChartView,num,0,1,3,Qt::AlignCenter);
+    QDateTimeAxis *dateAxisX = new QDateTimeAxis;//时间类型轴(用作X轴)
+    QValueAxis *axisY = new QValueAxis;
+
+    init.Chart -> addSeries(init.Series);
+    init.Chart->setAxisX(dateAxisX, init.Series);
+    init.Chart->setAxisY(axisY);
+
+    init.ChartView -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Ignored);
+
+    Temp_HumiLayout -> addWidget(init.ChartView,CountforTH,0,1,3,Qt::AlignCenter);
     if(info -> Controllable == READONLY)
     {
-        init.Value = new QLabel(subpage);
-        Layout -> addWidget(init.Value,num,0,1,1,Qt::AlignCenter);
+        init.Value = new QLabel("Temperature or Humidity");
+        Temp_HumiLayout -> addWidget(init.Value,CountforTH,3,1,1,Qt::AlignCenter);
     }
     else
     {
-        init.Command = new QPushButton(subpage);
-        Layout -> addWidget(init.Command,num,0,1,1,Qt::AlignCenter);
+        init.Command = new QPushButton("ON/OFF");
+        Temp_HumiLayout -> addWidget(init.Command,CountforTH,3,1,1,Qt::AlignCenter);
     }
-
+    delete info;
     Axislist.append(init);
-    return init;
+    CountforTH++;
+    return;
+
+}
+
+void MainWindow::Fresh_Axis(DataPull *data)
+{
+
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -57,28 +75,24 @@ void MainWindow::Load_PageIR()
 
 void MainWindow::Load_PageTH()
 {
+
     //initial state
-    SubTitle2 = new QLabel(WidgetP2);
-    SubTitle2 -> setText("Temprature & Humidity");
+    SubTitle2 = new QLabel(WidgetP1);
+    SubTitle2 -> setText("Infrared Sensor");
 
     //layout loaded
 }
 
-void MainWindow::Fresh_PageTH(DataPull *data,DataforUI info)
+void MainWindow::Fresh_PageTH(DataPull *data, DataforUI *info)
 {
-    //check if this node/endpoint exist;if yes fresh,if no creat;
-    if(!DataList.contains(info))
-    {
-        //creat
-        DataList.append(info);
-        //Creat_axis(&info,CountforTH,WidgetP2);
-        CountforTH++;
-    }
-    else
-    {
-        //fresh only
 
+    //check if this node/endpoint exist;if yes fresh,if no creat;
+    if(!DataList.contains(*info))
+    {
+        DataList.append(*info);
+        emit Creat_axis(info,WidgetP2);
     }
+    Fresh_Axis(data);
 }
 
 void MainWindow::Load_PageLI()
@@ -101,7 +115,7 @@ void MainWindow::Load_Status()
     Status -> setFont(ft);
     QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
     LayoutStatus -> addWidget(Status,0,0,1,1);
-    Status -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Ignored);
+    Status -> setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
     Status -> document() -> setMaximumBlockCount(50);
     Status -> setReadOnly(true);
 }
@@ -117,6 +131,10 @@ void MainWindow::Load_UI()
 
     StackedWidget = new QStackedWidget(MainWidget);
     GridLayout = new QGridLayout(MainWidget);
+    InfraredLayout = new QGridLayout(WidgetP1);
+    Temp_HumiLayout = new QGridLayout(WidgetP2);
+    LightLayout = new QGridLayout(WidgetP3);
+    EquipmentLayout = new QGridLayout(WidgetP4);
 
     setCentralWidget(MainWidget);
 
@@ -159,6 +177,36 @@ void MainWindow::Load_UI()
     connect(Temp_Humi,SIGNAL(clicked()),this,SLOT(SwitchPage_TH()));
     connect(Light,SIGNAL(clicked()),this,SLOT(SwitchPage_LI()));
     connect(Equipment,SIGNAL(clicked()),this,SLOT(SwitchPage_EQ()));
+    connect(this,SIGNAL(Creat_axis(DataforUI *,QWidget *)),this,SLOT(New_axis(DataforUI *,QWidget *)));
+
+
+    WidgetP1 -> setLayout(InfraredLayout);
+    WidgetP2 -> setLayout(Temp_HumiLayout);
+    WidgetP3 -> setLayout(LightLayout);
+    WidgetP4 -> setLayout(EquipmentLayout);
+
+    /*
+    QChart* chart = new QChart();
+
+    // 构建折线系列对象
+    QLineSeries *series = new QLineSeries();
+    for (quint32 i = 0; i < 100; i++)
+    {
+        // 参数 x 为循环自增变量 i，参数 y 为正弦函数Y值
+        series->append(i, sin(static_cast<double>(0.6f*i)));
+    }
+
+    // 将系列添加到图表
+    chart->addSeries(series);
+    // 基于已添加到图表的 series 来创建默认的坐标轴
+    chart->createDefaultAxes();
+
+    QChartView *p = new QChartView(chart);
+    p->setChart(chart);
+    Temp_HumiLayout->addWidget(p,0,0,3,1,Qt::AlignCenter);
+    */
+
+
 }
 
 
@@ -185,16 +233,17 @@ void MainWindow::SwitchPage_EQ()
 void UI_Thread::UpdateUI(DataPull *Message)
 {
     uint8_t node = Message->Node;
+    uint8_t control = Message->Controllable;
     uint8_t cluster = Message->Cluster;
     uint8_t endpoint = Message->Endpoint;
-    DataforUI Info{node,cluster,endpoint};
+    DataforUI *Info = new DataforUI{node,endpoint,control};
     switch(cluster)
     {
     case Temperature:
-        //UI.Fresh_PageTH(Message,Info);
+        UI.Fresh_PageTH(Message,Info);
         break;
     case Humidity:
-        //UI.Fresh_PageTH(Message,Info);
+        UI.Fresh_PageTH(Message,Info);
         break;
     default:
         break;
@@ -215,6 +264,8 @@ UI_Thread::~UI_Thread()
 void UI_Thread::run()
 {
     DataPull *Message;
+
+
     while(1)
     {
         /*
@@ -244,7 +295,7 @@ void UI_Thread::run()
             UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->Data.toHex(' '));
             UI.Status -> moveCursor(QTextCursor::End);
             msleep(2);
-            //UpdateUI(Message);
+            UpdateUI(Message);
             delete Message;
         }
     }

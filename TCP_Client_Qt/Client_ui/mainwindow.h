@@ -21,7 +21,7 @@ struct Components
 {
     uint8_t Node;
     uint8_t Endpoint;
-    QLineSeries *Series;
+    QLineSeries *Series;//reserved
     QChart *Chart;
     QChartView *ChartView;
     QLabel *Value;
@@ -35,6 +35,8 @@ struct Components
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+signals:
+    void Creat_axis(DataforUI *,QWidget *);
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -42,12 +44,14 @@ public:
 
     QTextEdit *Status;
 
-    void Fresh_PageIR(DataPull *, DataforUI);
-    void Fresh_PageTH(DataPull *, DataforUI);
-    void Fresh_PageLI(DataPull *, DataforUI);
-    void Fresh_PageEQ(DataPull *, DataforUI);
-    void Fresh_Status(DataPull *, DataforUI);
 
+    void Fresh_PageIR(DataPull *, DataforUI *);
+    void Fresh_PageTH(DataPull *,DataforUI *);
+    void Fresh_PageLI(DataPull *,DataforUI *);
+    void Fresh_PageEQ(DataPull *,DataforUI *);
+    void Fresh_Status(DataPull *,DataforUI *);
+
+    void Fresh_Axis(DataPull *);
 private:
     static uint8_t CountforTH;
     static uint8_t CountforLI;
@@ -65,10 +69,10 @@ private:
 
     QStackedWidget *StackedWidget;
     QGridLayout *GridLayout;
-    //QGridLayout *InfraredLayout;
-    //QGridLayout *Temp_HumiLayout;
-    //QGridLayout *LightLayout;
-    //QGridLayout *EquipmentLayout;
+    QGridLayout *InfraredLayout;
+    QGridLayout *Temp_HumiLayout;
+    QGridLayout *LightLayout;
+    QGridLayout *EquipmentLayout;
 
 
     QWidget *MainWidget;
@@ -78,8 +82,8 @@ private:
     QWidget *WidgetP4;
     QWidget *WidgetStatus;
 
-    QList<Components> Axislist;
-    struct Components Creat_axis(DataforUI *, uint8_t, QWidget *);
+    QList<Components> THlist;
+    //struct Components Creat_axis(DataforUI *, uint8_t, QWidget *);
 
     void Load_UI();
     void Load_PageIR();
@@ -93,6 +97,8 @@ private slots:
     void SwitchPage_TH();
     void SwitchPage_LI();
     void SwitchPage_EQ();
+
+    void New_axis(DataforUI *,QWidget *);
 };
 
 class UI_Thread : public QThread
