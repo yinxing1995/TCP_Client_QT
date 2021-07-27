@@ -24,9 +24,10 @@ struct Components
     QLineSeries *Series;//reserved
     QChart *Chart;
     QChartView *ChartView;
+    QDateTimeAxis *DateAxisX;
     QLabel *Value;
     QPushButton *Command;
-    bool operator == (const DataforUI &pkt) const
+    bool operator == (const Components &pkt) const
     {
         return((Node == pkt.Node)&&(Endpoint == pkt.Endpoint));
     }
@@ -36,7 +37,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 signals:
-    void Creat_axis(DataforUI *,QWidget *);
+    void Creat_Axis(DataforUI *,QWidget *,DataPull *);
+    void Fresh_Axis(DataPull *);
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -51,7 +53,7 @@ public:
     void Fresh_PageEQ(DataPull *,DataforUI *);
     void Fresh_Status(DataPull *,DataforUI *);
 
-    void Fresh_Axis(DataPull *);
+
 private:
     static uint8_t CountforTH;
     static uint8_t CountforLI;
@@ -98,7 +100,8 @@ private slots:
     void SwitchPage_LI();
     void SwitchPage_EQ();
 
-    void New_axis(DataforUI *,QWidget *);
+    void New_Axis(DataforUI *,QWidget *,DataPull *);
+    void Update_Axis(DataPull *);
 };
 
 class UI_Thread : public QThread

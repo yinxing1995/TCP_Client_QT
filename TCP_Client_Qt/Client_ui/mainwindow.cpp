@@ -12,47 +12,92 @@ uint8_t MainWindow::CountforTH = 0;
 uint8_t MainWindow::CountforLI = 0;
 
 //void MainWindow::Creat_axis(DataforUI *info, uint8_t num, QWidget *subpage)
-void MainWindow::New_axis(DataforUI *info,QWidget *subpage)
+void MainWindow::New_Axis(DataforUI *info,QWidget *subpage,DataPull *data)
 {
 
     uint8_t node = info -> Node;
     uint8_t endpoint = info -> Endpoint;
-    Components init{node,endpoint,NULL,NULL,NULL,NULL,NULL};
+    Components init{node,endpoint,NULL,NULL,NULL,NULL,NULL,NULL};
 
     init.Chart = new QChart();
-    init.ChartView = new QChartView(init.Chart);
+    init.ChartView = new QChartView();
     init.Series = new QLineSeries();
+    init.DateAxisX = new QDateTimeAxis();//时间类型轴(用作X轴)
 
-    QDateTimeAxis *dateAxisX = new QDateTimeAxis;//时间类型轴(用作X轴)
-    QValueAxis *axisY = new QValueAxis;
+    QValueAxis * AxisY = new QValueAxis();
 
-    init.Chart -> addSeries(init.Series);
-    init.Chart->setAxisX(dateAxisX, init.Series);
-    init.Chart->setAxisY(axisY);
 
-    init.ChartView -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Ignored);
+    init.Chart->setTitle("Linechart");
+    init.Chart->addSeries(init.Series);
 
-    Temp_HumiLayout -> addWidget(init.ChartView,CountforTH,0,1,3,Qt::AlignCenter);
+    init.DateAxisX->setFormat("mm:ss");
+    init.DateAxisX->setTickCount(6);
+
+    AxisY->setRange(-20,100);
+
+    init.Chart->addAxis(init.DateAxisX, Qt::AlignBottom);
+    init.Chart->addAxis(AxisY, Qt::AlignLeft);
+    init.Series->attachAxis(init.DateAxisX);
+    init.Series->attachAxis(AxisY);
+
+    QPen green(Qt::red);
+    green.setWidth(2);
+    init.Series->setPen(green);
+    init.Series->setName("Value");
+    init.ChartView -> setChart(init.Chart);
+    init.ChartView -> setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+
+    dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.ChartView,CountforTH,0,1,3);
     if(info -> Controllable == READONLY)
     {
         init.Value = new QLabel("Temperature or Humidity");
-        Temp_HumiLayout -> addWidget(init.Value,CountforTH,3,1,1,Qt::AlignCenter);
+        dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Value,CountforTH,3,1,1,Qt::AlignCenter);
     }
     else
     {
         init.Command = new QPushButton("ON/OFF");
-        Temp_HumiLayout -> addWidget(init.Command,CountforTH,3,1,1,Qt::AlignCenter);
+        dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Command,CountforTH,3,1,1,Qt::AlignCenter);
     }
     delete info;
     Axislist.append(init);
     CountforTH++;
+
+    Update_Axis(data);
     return;
 
 }
 
-void MainWindow::Fresh_Axis(DataPull *data)
+void MainWindow::Update_Axis(DataPull *data)
 {
 
+    uint8_t endpoint = data->Endpoint;
+    uint8_t node = data->Node;
+    Components temp{node,endpoint,NULL,NULL,NULL,NULL,NULL};
+    if(!Axislist.contains(temp))
+        return;
+    temp = Axislist.value(Axislist.indexOf(temp));
+
+    QDateTime past = QDateTime::currentDateTime().addSecs(-300);
+    QDateTime now = QDateTime::currentDateTime();
+    temp.DateAxisX->setRange(past,now);
+    float Yvalue;
+    memcpy(&Yvalue,data->Data.constData(),sizeof(float));
+    temp.Series->append(now.toMSecsSinceEpoch(),(qreal)Yvalue);
+    if(data->Cluster == Temperature)
+    {
+        char p[20];
+        sprintf(p,"Temp = %.2f℃",Yvalue);
+        temp.Series->setName("Temperature");
+        temp.Value -> setText(p);
+    }
+    if(data->Cluster == Humidity)
+    {
+        char p[20];
+        sprintf(p,"Humi = %.2f%%%",Yvalue);
+        temp.Series->setName("Humidity");
+        temp.Value -> setText(p);
+    }
+    delete data;
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -77,9 +122,8 @@ void MainWindow::Load_PageTH()
 {
 
     //initial state
-    SubTitle2 = new QLabel(WidgetP1);
-    SubTitle2 -> setText("Infrared Sensor");
-
+    //SubTitle2 = new QLabel(WidgetP1);
+    //SubTitle2 -> setText("Infrared Sensor");
     //layout loaded
 }
 
@@ -90,9 +134,12 @@ void MainWindow::Fresh_PageTH(DataPull *data, DataforUI *info)
     if(!DataList.contains(*info))
     {
         DataList.append(*info);
-        emit Creat_axis(info,WidgetP2);
+        emit Creat_Axis(info,WidgetP2,data);
     }
-    Fresh_Axis(data);
+    else
+    {
+        emit Fresh_Axis(data);
+    }
 }
 
 void MainWindow::Load_PageLI()
@@ -177,8 +224,8 @@ void MainWindow::Load_UI()
     connect(Temp_Humi,SIGNAL(clicked()),this,SLOT(SwitchPage_TH()));
     connect(Light,SIGNAL(clicked()),this,SLOT(SwitchPage_LI()));
     connect(Equipment,SIGNAL(clicked()),this,SLOT(SwitchPage_EQ()));
-    connect(this,SIGNAL(Creat_axis(DataforUI *,QWidget *)),this,SLOT(New_axis(DataforUI *,QWidget *)));
-
+    connect(this,SIGNAL(Creat_Axis(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Axis(DataforUI *,QWidget *,DataPull *)));
+    connect(this,SIGNAL(Fresh_Axis(DataPull *)),this,SLOT(Update_Axis(DataPull *)));
 
     WidgetP1 -> setLayout(InfraredLayout);
     WidgetP2 -> setLayout(Temp_HumiLayout);
@@ -296,7 +343,6 @@ void UI_Thread::run()
             UI.Status -> moveCursor(QTextCursor::End);
             msleep(2);
             UpdateUI(Message);
-            delete Message;
         }
     }
 }
