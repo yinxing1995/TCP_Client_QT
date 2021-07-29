@@ -1,6 +1,16 @@
 # Prerequisites
 *.d
 
+#Debug Path
+TCP_Client_Qt/build-Client_UI-Desktop_Qt_5_14_0_MinGW_64_bit-Debug
+
+TCP_Client_Qt/build-Client_UI-Desktop_Qt_5_14_0_MinGW_64_bit-Release
+
+TCP_Client_Qt/build-Client_UI-Desktop_Qt_5_14_2_MinGW_64_bit-Debug
+
+TCP_Client_Qt/build-Client_UI-Desktop_Qt_5_14_2_MinGW_64_bit-Release
+
+
 # Compiled Object files
 *.slo
 *.lo

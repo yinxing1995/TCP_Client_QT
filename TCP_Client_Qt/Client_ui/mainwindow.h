@@ -17,7 +17,7 @@
 
 class QLabel;
 
-struct Components
+struct Components_Axis
 {
     uint8_t Node;
     uint8_t Endpoint;
@@ -27,7 +27,21 @@ struct Components
     QDateTimeAxis *DateAxisX;
     QLabel *Value;
     QPushButton *Command;
-    bool operator == (const Components &pkt) const
+    bool operator == (const Components_Axis &pkt) const
+    {
+        return((Node == pkt.Node)&&(Endpoint == pkt.Endpoint));
+    }
+};
+
+struct Components_Array
+{
+public:
+    uint8_t Node;
+    uint8_t Endpoint;
+
+    QVector<QLabel *> Data;
+
+    bool operator == (const Components_Array &pkt) const
     {
         return((Node == pkt.Node)&&(Endpoint == pkt.Endpoint));
     }
@@ -37,8 +51,11 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 signals:
+    void Creat_Array(DataforUI *,QWidget *,DataPull *);
+    void Fresh_Array(DataPull *);
     void Creat_Axis(DataforUI *,QWidget *,DataPull *);
     void Fresh_Axis(DataPull *);
+
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -57,6 +74,7 @@ public:
 private:
     static uint8_t CountforTH;
     static uint8_t CountforLI;
+    static uint8_t CountforIR;
     bool wheelmove;//reserved
 
     QLabel *SubTitle1;
@@ -84,7 +102,7 @@ private:
     QWidget *WidgetP4;
     QWidget *WidgetStatus;
 
-    QList<Components> THlist;
+    //QList<Components_Axis> THlist;
     //struct Components Creat_axis(DataforUI *, uint8_t, QWidget *);
 
     void Load_UI();
@@ -100,6 +118,8 @@ private slots:
     void SwitchPage_LI();
     void SwitchPage_EQ();
 
+    void New_Array(DataforUI *,QWidget *,DataPull *);
+    void Update_Array(DataPull *);
     void New_Axis(DataforUI *,QWidget *,DataPull *);
     void Update_Axis(DataPull *);
 };

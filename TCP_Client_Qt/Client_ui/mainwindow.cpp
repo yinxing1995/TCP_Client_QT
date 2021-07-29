@@ -6,18 +6,119 @@
 #include <QTextEdit>
 
 extern QVector<DataforUI> DataList;
-QVector<Components> Axislist;
+QVector<Components_Axis> Axislist;
+QVector<Components_Array> Arraylist;
 
 uint8_t MainWindow::CountforTH = 0;
 uint8_t MainWindow::CountforLI = 0;
+uint8_t MainWindow::CountforIR = 0;
 
-//void MainWindow::Creat_axis(DataforUI *info, uint8_t num, QWidget *subpage)
+template <typename T>
+static void CovertKtoRG (T *component, float temperature)
+{
+    uint8_t R = 0,G = 0,B = 0;
+    char p[30];
+    if(temperature < 0)
+        temperature = 0;
+    else if(temperature > 120)
+        temperature = 120;
+
+    if(temperature < 20)
+    {
+        R = 0;
+        G = 0;
+        B = 255;
+    }
+    else if(temperature < 40)
+    {
+        R = 0;
+        G = 255 * (temperature - 20) / 20;
+        B = 255;
+    }
+    else if(temperature < 60)
+    {
+        R = 0;
+        G = 255;
+        B = 255 - 255 * (temperature - 40) / 20;
+    }
+    else if(temperature < 80)
+    {
+        R = 255 * (temperature - 60) / 20;
+        G = 255;
+        B = 0;
+    }
+    else if(temperature < 100)
+    {
+        R = 255;
+        G = 255 - 255 * (temperature - 80) / 20;
+        B = 0;
+    }
+    else if(temperature < 120)
+    {
+        R = 255;
+        G = 0;
+        B = 255 * (temperature - 100) / 20;
+    }
+
+    sprintf(p,"QLabel{background-color:rgb(%d,%d,%d);}",R,G,B);
+    component -> setStyleSheet(p);
+}
+
+void MainWindow::New_Array(DataforUI *info,QWidget *subpage,DataPull *data)
+{
+    Components_Array init;
+    init.Node = info->Node;
+    init.Endpoint = info->Endpoint;
+    init.Data.clear();
+    init.Data.resize(64);
+    QGridLayout * Window = dynamic_cast<QGridLayout*>(subpage->layout());
+
+    for(int row=0; row<8; row++)
+    {
+        for(int col=0; col<8; col++)
+        {
+            QLabel *p = new QLabel();
+            p->setStyleSheet("QLabel{background-color:rgb(255,255,255);}");
+            p->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+            p->setAlignment(Qt::AlignCenter);
+            Window->addWidget(p,row,col,1,1);
+            init.Data.push_front(p);
+        }
+    }
+
+    Arraylist.append(init);
+    Update_Array(data);
+    delete info;
+    return;
+}
+
+void MainWindow::Update_Array(DataPull *data)
+{
+    uint8_t endpoint = data->Endpoint;
+    uint8_t node = data->Node;
+    Components_Array temp{node,endpoint};
+    if(!Arraylist.contains(temp))
+        return;
+    temp = Arraylist.value(Arraylist.indexOf(temp));
+    float Value = 0;
+    char p[20];
+    for(int i=0;i<64;i++)
+    {
+        memcpy(&Value,data->Data.constData(),sizeof(Value));
+        data->Data.remove(0,sizeof(Value));
+        sprintf(p,"%.2f℃",Value);
+        CovertKtoRG(temp.Data[i],Value);
+        temp.Data[i]->setText(p);
+    }
+    delete data;
+}
+
+
 void MainWindow::New_Axis(DataforUI *info,QWidget *subpage,DataPull *data)
 {
-
     uint8_t node = info -> Node;
     uint8_t endpoint = info -> Endpoint;
-    Components init{node,endpoint,NULL,NULL,NULL,NULL,NULL,NULL};
+    Components_Axis init{node,endpoint,NULL,NULL,NULL,NULL,NULL,NULL};
 
     init.Chart = new QChart();
     init.ChartView = new QChartView();
@@ -30,7 +131,7 @@ void MainWindow::New_Axis(DataforUI *info,QWidget *subpage,DataPull *data)
     init.Chart->setTitle("Linechart");
     init.Chart->addSeries(init.Series);
 
-    init.DateAxisX->setFormat("mm:ss");
+    init.DateAxisX->setFormat("hh:mm");
     init.DateAxisX->setTickCount(6);
 
     AxisY->setRange(-20,100);
@@ -41,27 +142,47 @@ void MainWindow::New_Axis(DataforUI *info,QWidget *subpage,DataPull *data)
     init.Series->attachAxis(AxisY);
 
     QPen green(Qt::red);
-    green.setWidth(2);
+    green.setWidth(1);
     init.Series->setPen(green);
     init.Series->setName("Value");
     init.ChartView -> setChart(init.Chart);
     init.ChartView -> setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+    uint8_t Lines = 0;
 
-    dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.ChartView,CountforTH,0,1,3);
-    if(info -> Controllable == READONLY)
+    QString Text;
+    if(subpage == WidgetP2)
     {
-        init.Value = new QLabel("Temperature or Humidity");
-        dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Value,CountforTH,3,1,1,Qt::AlignCenter);
+        Lines = CountforTH;
+        CountforTH++;
+        Text = "Temperature or Humidity";
+    }
+    else if(subpage == WidgetP3)
+    {
+        Lines = CountforLI - 1;
+        CountforLI++;
+        Text = "LightStrength";
     }
     else
     {
-        init.Command = new QPushButton("ON/OFF");
-        dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Command,CountforTH,3,1,1,Qt::AlignCenter);
+        delete info;
+        delete data;
+        return;
+    }
+
+    dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.ChartView,Lines,0,1,3);
+    if(info -> Controllable == READONLY)
+    {
+        init.Value = new QLabel(Text);
+        dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Value,Lines,3,1,1,Qt::AlignCenter);
+    }
+    else
+    {
+        init.Command = new QPushButton(Text);
+        dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Command,Lines,3,1,1,Qt::AlignCenter);
     }
     delete info;
-    Axislist.append(init);
-    CountforTH++;
 
+    Axislist.append(init);
     Update_Axis(data);
     return;
 
@@ -72,29 +193,36 @@ void MainWindow::Update_Axis(DataPull *data)
 
     uint8_t endpoint = data->Endpoint;
     uint8_t node = data->Node;
-    Components temp{node,endpoint,NULL,NULL,NULL,NULL,NULL};
+    Components_Axis temp{node,endpoint,NULL,NULL,NULL,NULL,NULL};
     if(!Axislist.contains(temp))
         return;
     temp = Axislist.value(Axislist.indexOf(temp));
 
-    QDateTime past = QDateTime::currentDateTime().addSecs(-300);
+    QDateTime past = QDateTime::currentDateTime().addSecs(-60*60*24);
     QDateTime now = QDateTime::currentDateTime();
     temp.DateAxisX->setRange(past,now);
     float Yvalue;
-    memcpy(&Yvalue,data->Data.constData(),sizeof(float));
+    memcpy(&Yvalue,data->Data.constData(),sizeof(Yvalue));
     temp.Series->append(now.toMSecsSinceEpoch(),(qreal)Yvalue);
     if(data->Cluster == Temperature)
     {
         char p[20];
-        sprintf(p,"Temp = %.2f℃",Yvalue);
+        sprintf(p,"Node = %d\r\nTemp = %.2f℃",data->Node,Yvalue);
         temp.Series->setName("Temperature");
         temp.Value -> setText(p);
     }
     if(data->Cluster == Humidity)
     {
         char p[20];
-        sprintf(p,"Humi = %.2f%%%",Yvalue);
+        sprintf(p,"Node = %d\r\nHumi = %.2f%%%",data->Node,Yvalue);
         temp.Series->setName("Humidity");
+        temp.Value -> setText(p);
+    }
+    if(data->Cluster == LightStrength)
+    {
+        char p[20];
+        sprintf(p,"Node = %d\r\nLight = %d",data->Node,(uint32_t)Yvalue);
+        temp.Series->setName("Light");
         temp.Value -> setText(p);
     }
     delete data;
@@ -114,17 +242,26 @@ MainWindow::~MainWindow()
 
 void MainWindow::Load_PageIR()
 {
-    SubTitle1 = new QLabel(WidgetP1);
-    SubTitle1 -> setText("Infrared Sensor");
+}
+
+void MainWindow::Fresh_PageIR(DataPull *data, DataforUI *info)
+{
+    //processing
+    //check if this node/endpoint exist;if yes fresh,if no creat;
+    if(!DataList.contains(*info))
+    {
+        DataList.append(*info);
+        emit Creat_Array(info,WidgetP1,data);
+    }
+    else
+    {
+        emit Fresh_Array(data);
+    }
 }
 
 void MainWindow::Load_PageTH()
 {
 
-    //initial state
-    //SubTitle2 = new QLabel(WidgetP1);
-    //SubTitle2 -> setText("Infrared Sensor");
-    //layout loaded
 }
 
 void MainWindow::Fresh_PageTH(DataPull *data, DataforUI *info)
@@ -144,8 +281,22 @@ void MainWindow::Fresh_PageTH(DataPull *data, DataforUI *info)
 
 void MainWindow::Load_PageLI()
 {
-    SubTitle3 = new QLabel(WidgetP3);
-    SubTitle3 -> setText("Light Sensor");
+
+}
+
+void MainWindow::Fresh_PageLI(DataPull *data, DataforUI *info)
+{
+
+    //check if this node/endpoint exist;if yes fresh,if no creat;
+    if(!DataList.contains(*info))
+    {
+        DataList.append(*info);
+        emit Creat_Axis(info,WidgetP3,data);
+    }
+    else
+    {
+        emit Fresh_Axis(data);
+    }
 }
 
 void MainWindow::Load_PageEQ()
@@ -226,33 +377,13 @@ void MainWindow::Load_UI()
     connect(Equipment,SIGNAL(clicked()),this,SLOT(SwitchPage_EQ()));
     connect(this,SIGNAL(Creat_Axis(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Axis(DataforUI *,QWidget *,DataPull *)));
     connect(this,SIGNAL(Fresh_Axis(DataPull *)),this,SLOT(Update_Axis(DataPull *)));
+    connect(this,SIGNAL(Creat_Array(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Array(DataforUI *,QWidget *,DataPull *)));
+    connect(this,SIGNAL(Fresh_Array(DataPull *)),this,SLOT(Update_Array(DataPull *)));
 
     WidgetP1 -> setLayout(InfraredLayout);
     WidgetP2 -> setLayout(Temp_HumiLayout);
     WidgetP3 -> setLayout(LightLayout);
     WidgetP4 -> setLayout(EquipmentLayout);
-
-    /*
-    QChart* chart = new QChart();
-
-    // 构建折线系列对象
-    QLineSeries *series = new QLineSeries();
-    for (quint32 i = 0; i < 100; i++)
-    {
-        // 参数 x 为循环自增变量 i，参数 y 为正弦函数Y值
-        series->append(i, sin(static_cast<double>(0.6f*i)));
-    }
-
-    // 将系列添加到图表
-    chart->addSeries(series);
-    // 基于已添加到图表的 series 来创建默认的坐标轴
-    chart->createDefaultAxes();
-
-    QChartView *p = new QChartView(chart);
-    p->setChart(chart);
-    Temp_HumiLayout->addWidget(p,0,0,3,1,Qt::AlignCenter);
-    */
-
 
 }
 
@@ -292,6 +423,11 @@ void UI_Thread::UpdateUI(DataPull *Message)
     case Humidity:
         UI.Fresh_PageTH(Message,Info);
         break;
+    case LightStrength:
+        UI.Fresh_PageLI(Message,Info);
+        break;
+    case TemperatureArray:
+        UI.Fresh_PageIR(Message,Info);
     default:
         break;
     }
@@ -339,7 +475,8 @@ void UI_Thread::run()
         }
         else
         {
-            UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->Data.toHex(' '));
+            //UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->Data.toHex(' '));
+            UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + " Node " + QString("%1").arg(Message->Node) + " Cluster " + QString("%1").arg(Message->Cluster));
             UI.Status -> moveCursor(QTextCursor::End);
             msleep(2);
             UpdateUI(Message);
