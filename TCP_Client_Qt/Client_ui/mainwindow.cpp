@@ -206,9 +206,10 @@ void MainWindow::Update_Axis(DataPull *data)
     temp.DateAxisX->setRange(past,now);
     float Yvalue;
     memcpy(&Yvalue,data->Data.constData(),sizeof(Yvalue));
-    temp.Series->append(now.toMSecsSinceEpoch(),(qreal)Yvalue);
+    //temp.Series->append(now.toMSecsSinceEpoch(),(qreal)Yvalue);
     if(data->Cluster == Temperature)
     {
+        temp.Series->append(now.toMSecsSinceEpoch(),(qreal)Yvalue);
         char p[20];
         sprintf(p,"Node = %d\r\nTemp = %.2f℃",data->Node,Yvalue);
         temp.Series->setName("Temperature");
@@ -216,6 +217,7 @@ void MainWindow::Update_Axis(DataPull *data)
     }
     if(data->Cluster == Humidity)
     {
+        temp.Series->append(now.toMSecsSinceEpoch(),(qreal)Yvalue);
         char p[20];
         sprintf(p,"Node = %d\r\nHumi = %.2f%%%",data->Node,Yvalue);
         temp.Series->setName("Humidity");
@@ -223,6 +225,7 @@ void MainWindow::Update_Axis(DataPull *data)
     }
     if(data->Cluster == LightStrength)
     {
+        temp.Series->append(now.toMSecsSinceEpoch(),*(uint32_t *)&Yvalue);
         char p[20];
         sprintf(p,"Node = %d\r\nLight = %d",data->Node,*(uint32_t *)&Yvalue);
         temp.Series->setName("Light");
