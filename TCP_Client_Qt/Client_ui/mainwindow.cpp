@@ -237,6 +237,7 @@ MainWindow::MainWindow(QWidget *parent)
     this -> setWindowTitle(tr("Fire Detecting System"));
     this -> resize(800,600);
     Load_UI();
+    this -> show();
 }
 
 MainWindow::~MainWindow()
@@ -431,7 +432,9 @@ void UI_Thread::UpdateUI(DataPull *Message)
         break;
     case TemperatureArray:
         UI.Fresh_PageIR(Message,Info);
+        break;
     default:
+        delete Message;
         break;
     }
 }

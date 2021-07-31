@@ -8,6 +8,7 @@ TCP_Thread::TCP_Thread()
     NetMessage.clear();
     //stopped = false;
     blocksize = 0;
+    //tcpSocket -> moveToThread(this);
     start();
 }
 

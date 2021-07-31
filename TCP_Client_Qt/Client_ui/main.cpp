@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     {
         UI_Thread ui_thread;
         TCP_Thread net_thread;
-        ui_thread.UI.show();
+        //ui_thread.UI.show();
         return a.exec();
     }
      else
