@@ -18,9 +18,9 @@ static void CovertKtoRG (T *component, float temperature)
 {
     uint8_t R = 0,G = 0,B = 0;
     char p[30];
-    if(temperature < 0)
+    if(temperature <= 0)
         temperature = 0;
-    else if(temperature > 120)
+    else if(temperature >= 120)
         temperature = 120;
 
     if(temperature < 20)
@@ -128,13 +128,16 @@ void MainWindow::New_Axis(DataforUI *info,QWidget *subpage,DataPull *data)
     QValueAxis * AxisY = new QValueAxis();
 
 
-    init.Chart->setTitle("Linechart");
+    //init.Chart->setTitle("Linechart");
     init.Chart->addSeries(init.Series);
 
     init.DateAxisX->setFormat("hh:mm");
     init.DateAxisX->setTickCount(6);
 
-    AxisY->setRange(-20,100);
+    if((data->Cluster == Temperature)||(data->Cluster == Humidity))
+        AxisY->setRange(0,100);
+    else if(data->Cluster == LightStrength)
+        AxisY->setRange(0,10);
 
     init.Chart->addAxis(init.DateAxisX, Qt::AlignBottom);
     init.Chart->addAxis(AxisY, Qt::AlignLeft);
@@ -221,7 +224,7 @@ void MainWindow::Update_Axis(DataPull *data)
     if(data->Cluster == LightStrength)
     {
         char p[20];
-        sprintf(p,"Node = %d\r\nLight = %d",data->Node,(uint32_t)Yvalue);
+        sprintf(p,"Node = %d\r\nLight = %d",data->Node,*(uint32_t *)&Yvalue);
         temp.Series->setName("Light");
         temp.Value -> setText(p);
     }
