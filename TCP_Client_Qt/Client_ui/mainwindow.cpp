@@ -8,10 +8,17 @@
 extern QVector<DataforUI> DataList;
 QVector<Components_Axis> Axislist;
 QVector<Components_Array> Arraylist;
+QVector<Components_Control> Controllist;
 
 uint8_t MainWindow::CountforTH = 0;
 uint8_t MainWindow::CountforLI = 0;
 uint8_t MainWindow::CountforIR = 0;
+uint8_t MainWindow::CountforEQ = 0;
+
+static void GenerateMessage(uint8_t node,uint8_t endpoint,uint8_t onoff)
+{
+    qDebug() << "Node" << node << "End" << endpoint;
+}
 
 template <typename T>
 static void CovertKtoRG (T *component, float temperature)
@@ -161,7 +168,7 @@ void MainWindow::New_Axis(DataforUI *info,QWidget *subpage,DataPull *data)
     }
     else if(subpage == WidgetP3)
     {
-        Lines = CountforLI - 1;
+        Lines = CountforLI;
         CountforLI++;
         Text = "LightStrength";
     }
@@ -234,6 +241,69 @@ void MainWindow::Update_Axis(DataPull *data)
     delete data;
 }
 
+void MainWindow::New_Control(DataforUI *info,QWidget *subpage,DataPull *data)
+{
+    uint8_t node = info -> Node;
+    uint8_t endpoint = info -> Endpoint;
+    Components_Control init{node,endpoint,NULL,NULL};
+
+    init.Value = new QLabel(subpage);
+    init.Onoff = new QPushButton(subpage);
+
+    uint8_t Lines = CountforEQ;
+    dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Value,Lines,0,1,3,Qt::AlignCenter);
+    dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Onoff,Lines,3,1,1,Qt::AlignCenter);
+    CountforEQ++;
+    Controllist.append(init);
+    connect(init.Onoff,SIGNAL(clicked()),this,SLOT(Creat_Command_Button()));
+    Update_Control(data);
+    delete info;
+    return;
+}
+
+void MainWindow::Update_Control(DataPull * data)
+{
+    uint8_t endpoint = data->Endpoint;
+    uint8_t node = data->Node;
+    Components_Control temp{node,endpoint,NULL,NULL};
+    if(!Controllist.contains(temp))
+        return;
+    temp = Controllist.value(Controllist.indexOf(temp));
+    char p[30];
+    sprintf(p,"Node = %d Endpoint = %d State = ",data->Node,data->Endpoint);
+    if(data->Data.constData() == 0)
+    {
+        strcat(p,"OFF");
+        temp.Onoff->setText("Open");
+    }
+    else
+    {
+        strcat(p,"ON");
+        temp.Onoff->setText("Close");
+    }
+    temp.Value->setText(p);
+    delete data;
+}
+
+void MainWindow::Creat_Command_Button()
+{
+    QPushButton *Btn = dynamic_cast<QPushButton*>(this->sender());
+    uint8_t max = Controllist.size();
+    uint8_t i,onoff;
+    for(i=0; i<max; i++)
+    {
+        if((Controllist.value(i)).Onoff == Btn)
+            break;
+    }
+    if(i == max)
+        return;
+    if(Btn->text()=="ON")
+        onoff = 1;
+    else
+        onoff = 0;
+    GenerateMessage(Controllist[i].Node,Controllist[i].Endpoint,onoff);
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -253,8 +323,6 @@ void MainWindow::Load_PageIR()
 
 void MainWindow::Fresh_PageIR(DataPull *data, DataforUI *info)
 {
-    //processing
-    //check if this node/endpoint exist;if yes fresh,if no creat;
     if(!DataList.contains(*info))
     {
         DataList.append(*info);
@@ -308,8 +376,21 @@ void MainWindow::Fresh_PageLI(DataPull *data, DataforUI *info)
 
 void MainWindow::Load_PageEQ()
 {
-    SubTitle4 = new QLabel(WidgetP4);
-    SubTitle4 -> setText("Equipment");
+}
+
+void MainWindow::Fresh_PageEQ(DataPull *data, DataforUI *info)
+{
+
+    //check if this node/endpoint exist;if yes fresh,if no creat;
+    if(!DataList.contains(*info))
+    {
+        DataList.append(*info);
+        emit Creat_Control(info,WidgetP4,data);
+    }
+    else
+    {
+        emit Fresh_Control(data);
+    }
 }
 
 void MainWindow::Load_Status()
@@ -386,6 +467,8 @@ void MainWindow::Load_UI()
     connect(this,SIGNAL(Fresh_Axis(DataPull *)),this,SLOT(Update_Axis(DataPull *)));
     connect(this,SIGNAL(Creat_Array(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Array(DataforUI *,QWidget *,DataPull *)));
     connect(this,SIGNAL(Fresh_Array(DataPull *)),this,SLOT(Update_Array(DataPull *)));
+    connect(this,SIGNAL(Creat_Control(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Control(DataforUI *,QWidget *,DataPull *)));
+    connect(this,SIGNAL(Fresh_Control(DataPull *)),this,SLOT(Update_Control(DataPull *)));
 
     WidgetP1 -> setLayout(InfraredLayout);
     WidgetP2 -> setLayout(Temp_HumiLayout);
@@ -435,6 +518,9 @@ void UI_Thread::UpdateUI(DataPull *Message)
         break;
     case TemperatureArray:
         UI.Fresh_PageIR(Message,Info);
+        break;
+    case OnOff:
+        UI.Fresh_PageEQ(Message,Info);
         break;
     default:
         delete Message;
