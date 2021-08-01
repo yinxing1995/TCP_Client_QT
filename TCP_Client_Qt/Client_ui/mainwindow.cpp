@@ -287,7 +287,7 @@ void MainWindow::New_Control(DataforUI *info,QWidget *subpage,DataPull *data)
     dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Onoff,Lines,3,1,1,Qt::AlignCenter);
     CountforEQ++;
     Controllist.append(init);
-    connect(init.Onoff,SIGNAL(clicked()),this,SLOT(Creat_Command_Button()),Qt::DirectConnection);
+    connect(init.Onoff,SIGNAL(clicked()),this,SLOT(Creat_Command_Button()));
     Update_Control(data);
     delete info;
     return;
@@ -509,12 +509,12 @@ void MainWindow::Load_UI()
     connect(Temp_Humi,SIGNAL(clicked()),this,SLOT(SwitchPage_TH()));
     connect(Light,SIGNAL(clicked()),this,SLOT(SwitchPage_LI()));
     connect(Equipment,SIGNAL(clicked()),this,SLOT(SwitchPage_EQ()));
-    connect(this,SIGNAL(Creat_Axis(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Axis(DataforUI *,QWidget *,DataPull *)),Qt::DirectConnection);
-    connect(this,SIGNAL(Fresh_Axis(DataPull *)),this,SLOT(Update_Axis(DataPull *)),Qt::DirectConnection);
-    connect(this,SIGNAL(Creat_Array(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Array(DataforUI *,QWidget *,DataPull *)),Qt::DirectConnection);
-    connect(this,SIGNAL(Fresh_Array(DataPull *)),this,SLOT(Update_Array(DataPull *)),Qt::DirectConnection);
-    connect(this,SIGNAL(Creat_Control(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Control(DataforUI *,QWidget *,DataPull *)),Qt::DirectConnection);
-    connect(this,SIGNAL(Fresh_Control(DataPull *)),this,SLOT(Update_Control(DataPull *)),Qt::DirectConnection);
+    connect(this,SIGNAL(Creat_Axis(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Axis(DataforUI *,QWidget *,DataPull *)));
+    connect(this,SIGNAL(Fresh_Axis(DataPull *)),this,SLOT(Update_Axis(DataPull *)));
+    connect(this,SIGNAL(Creat_Array(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Array(DataforUI *,QWidget *,DataPull *)));
+    connect(this,SIGNAL(Fresh_Array(DataPull *)),this,SLOT(Update_Array(DataPull *)));
+    connect(this,SIGNAL(Creat_Control(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Control(DataforUI *,QWidget *,DataPull *)));
+    connect(this,SIGNAL(Fresh_Control(DataPull *)),this,SLOT(Update_Control(DataPull *)));
 
 
     WidgetP1 -> setLayout(InfraredLayout);
