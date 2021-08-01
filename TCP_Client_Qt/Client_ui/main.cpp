@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
         UI_Thread ui_thread;
         TCP_Thread net_thread;
         QObject::connect(&ui_thread.UI,SIGNAL(Send_Message(QByteArray *)),&net_thread,SLOT(SendData(QByteArray *)),Qt::QueuedConnection);
+        ui_thread.start();
         net_thread.CreatConnect();
         return a.exec();
     }

@@ -37,7 +37,7 @@ void TCP_Thread::ReadData()
 
 void TCP_Thread::SendData(QByteArray *Message)
 {
-    tcpSocket -> write(*Message);
+    tcpSocket -> write(Message->constData(),Message->size());
     tcpSocket -> waitForBytesWritten();
     qDebug() << "Send Message";
     delete Message;

@@ -44,9 +44,10 @@ void MainWindow::GenerateMessage(uint8_t node,uint8_t endpoint,uint8_t datatype,
     }
     else return;
 
-    uint16_t FrameLen = Message->size();
+    uint16_t FrameLen = Message->size() + sizeof(FrameLen);
     char *p = (char *)&FrameLen;
     Message->insert(0,p,sizeof(FrameLen));
+    Message->insert(0,FRAME_FLAG,strlen(FRAME_FLAG));
     qDebug() << Message->toHex();
     emit Send_Message(Message);
 }
@@ -100,6 +101,7 @@ static void CovertKtoRG (T *component, float temperature)
 
     sprintf(p,"QLabel{background-color:rgb(%d,%d,%d);}",R,G,B);
     component -> setStyleSheet(p);
+
 }
 
 void MainWindow::New_Array(DataforUI *info,QWidget *subpage,DataPull *data)
@@ -281,10 +283,16 @@ void MainWindow::New_Control(DataforUI *info,QWidget *subpage,DataPull *data)
 
     init.Value = new QLabel(subpage);
     init.Onoff = new QPushButton(subpage);
+    //init.Value->setStyleSheet("QLabel{background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,stop:0 yellow,stop:1 pink);}");
+    init.Value->setStyleSheet("QLabel{background-color:pink;}");
+    init.Value->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+    init.Value->setAlignment(Qt::AlignCenter);
 
     uint8_t Lines = CountforEQ;
     dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Value,Lines,0,1,3,Qt::AlignCenter);
     dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Onoff,Lines,3,1,1,Qt::AlignCenter);
+
+
     CountforEQ++;
     Controllist.append(init);
     connect(init.Onoff,SIGNAL(clicked()),this,SLOT(Creat_Command_Button()));
@@ -442,14 +450,18 @@ void MainWindow::Fresh_PageEQ(DataPull *data, DataforUI *info)
 void MainWindow::Load_Status()
 {
     Status = new QTextEdit(WidgetStatus);
-    QFont ft;
-    ft.setPointSize(10);
-    Status -> setFont(ft);
+
     QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
     LayoutStatus -> addWidget(Status,0,0,1,1);
     Status -> setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
     Status -> document() -> setMaximumBlockCount(50);
     Status -> setReadOnly(true);
+    /*
+    QFont *ft = new QFont;
+    ft->setPointSize(10);
+    Status -> setFont(*ft);
+    */
+    Status->setFontPointSize(10);
 }
 
 void MainWindow::Load_UI()
@@ -522,6 +534,8 @@ void MainWindow::Load_UI()
     WidgetP3 -> setLayout(LightLayout);
     WidgetP4 -> setLayout(EquipmentLayout);
 
+
+
 }
 
 
@@ -575,12 +589,14 @@ void UI_Thread::UpdateUI(DataPull *Message)
         else
             UI.Fresh_PageLI(Message,Info);
         break;
+
     case TemperatureArray:
         if(Message->Controllable == READWRITE)
             UI.Fresh_PageEQ(Message,Info);
         else
             UI.Fresh_PageIR(Message,Info);
         break;
+
     case OnOff:
         UI.Fresh_PageEQ(Message,Info);
         break;
@@ -592,7 +608,7 @@ void UI_Thread::UpdateUI(DataPull *Message)
 
 UI_Thread::UI_Thread()
 {
-    this->start();
+    //this->start();
 }
 
 UI_Thread::~UI_Thread()
@@ -603,27 +619,10 @@ UI_Thread::~UI_Thread()
 void UI_Thread::run()
 {
     DataPull *Message;
-
+    qRegisterMetaType<QTextCursor>("QTextCursor");
 
     while(1)
     {
-        /*
-        Message = ProcessMessage();
-        if(!Message)
-        {
-
-            msleep(20);
-        }
-        else
-        {
-            qDebug() << Message->toHex();
-            UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->toHex(' '));
-            UI.Status -> moveCursor(QTextCursor::End);
-            delete Message;
-            msleep(5);
-        }
-        Message = NULL;
-        */
         Message = ProcessMessage();
         if(!Message)
         {
