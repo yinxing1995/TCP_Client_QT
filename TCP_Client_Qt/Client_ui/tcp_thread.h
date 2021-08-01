@@ -20,7 +20,7 @@ public:
     ~TCP_Thread();
     void CreatConnect();
     void ReadData();
-    void SendData();
+
     QTcpSocket *tcpSocket;
     QByteArray NetMessage;
 
@@ -32,7 +32,9 @@ private:
     char *ip_addr, port_num;
     quint16 blocksize;
     //bool stopped;
+
 private slots:
+    void SendData(QByteArray *);
     void SendBind();
     void DisplayError(QAbstractSocket::SocketError);
 

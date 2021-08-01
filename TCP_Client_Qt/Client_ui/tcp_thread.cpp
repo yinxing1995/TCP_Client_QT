@@ -35,11 +35,12 @@ void TCP_Thread::ReadData()
     AddtoTail(NetMessage);
 }
 
-void TCP_Thread::SendData()
+void TCP_Thread::SendData(QByteArray *Message)
 {
-    QString m = "Client Qt!";
-    tcpSocket -> write(m.toLatin1());
+    tcpSocket -> write(*Message);
     tcpSocket -> waitForBytesWritten();
+    qDebug() << "Send Message";
+    delete Message;
 }
 
 void TCP_Thread::SendBind()

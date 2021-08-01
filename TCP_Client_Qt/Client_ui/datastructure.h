@@ -5,6 +5,14 @@
 
 #define FRAME_FLAG "Frame"
 
+enum FrameType
+{
+    REPORT = 0x00,
+    CHECK = 0x01,
+    NETSTATUS = 0x02,
+    CONTROL = 0x03,
+};
+
 enum Cluster
 {
     Temperature = 0x00,
@@ -19,6 +27,12 @@ enum Control
 {
     READWRITE = 0x00,
     READONLY =0x01,
+};
+
+enum DataType
+{
+    _INT32 = 0x00,
+    _FLOAT = 0x01,
 };
 
 class DataPull
@@ -41,6 +55,8 @@ struct DataforUI
     uint8_t Node;
     uint8_t Endpoint;
     uint8_t Controllable;//reserved
+    uint8_t Datatype;
+    uint8_t Datalength;
     bool operator == (const DataforUI &pkt) const
     {
         return((Node == pkt.Node)&&(Endpoint == pkt.Endpoint));

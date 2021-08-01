@@ -15,9 +15,40 @@ uint8_t MainWindow::CountforLI = 0;
 uint8_t MainWindow::CountforIR = 0;
 uint8_t MainWindow::CountforEQ = 0;
 
-static void GenerateMessage(uint8_t node,uint8_t endpoint,uint8_t onoff)
+void MainWindow::GenerateMessage(uint8_t node,uint8_t endpoint,uint8_t datatype,uint8_t datalen,float *data)
 {
-    qDebug() << "Node" << node << "End" << endpoint;
+    QByteArray *Message = new QByteArray;
+    Message->append(CONTROL);
+    Message->append(node);
+    Message->append(endpoint);
+    Message->append(datatype);
+    Message->append(datalen);
+    float p1[datalen];
+    uint32_t p2[datalen];
+    uint8_t i = datalen;
+    if(datatype == _INT32)
+    {
+        for(i=0;i<datalen;i++)
+        {
+            p2[i] = data[i];
+        }
+        Message->append((char *)p2,datalen*sizeof(p2));
+    }
+    else if(datatype == _FLOAT)
+    {
+        for(i=0;i<datalen;i++)
+        {
+            p1[i] = data[i];
+        }
+        Message->append((char *)p1,datalen*sizeof(p1));
+    }
+    else return;
+
+    uint16_t FrameLen = Message->size();
+    char *p = (char *)&FrameLen;
+    Message->insert(0,p,sizeof(FrameLen));
+    qDebug() << Message->toHex();
+    emit Send_Message(Message);
 }
 
 template <typename T>
@@ -77,9 +108,9 @@ void MainWindow::New_Array(DataforUI *info,QWidget *subpage,DataPull *data)
     init.Node = info->Node;
     init.Endpoint = info->Endpoint;
     init.Data.clear();
-    init.Data.resize(64);
+    init.Data.resize(info->Datalength);
     QGridLayout * Window = dynamic_cast<QGridLayout*>(subpage->layout());
-
+    //size could be variable
     for(int row=0; row<8; row++)
     {
         for(int col=0; col<8; col++)
@@ -92,7 +123,7 @@ void MainWindow::New_Array(DataforUI *info,QWidget *subpage,DataPull *data)
             init.Data.push_front(p);
         }
     }
-
+    //
     Arraylist.append(init);
     Update_Array(data);
     delete info;
@@ -180,16 +211,9 @@ void MainWindow::New_Axis(DataforUI *info,QWidget *subpage,DataPull *data)
     }
 
     dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.ChartView,Lines,0,1,3);
-    if(info -> Controllable == READONLY)
-    {
-        init.Value = new QLabel(Text);
-        dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Value,Lines,3,1,1,Qt::AlignCenter);
-    }
-    else
-    {
-        init.Command = new QPushButton(Text);
-        dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Command,Lines,3,1,1,Qt::AlignCenter);
-    }
+
+    init.Value = new QLabel(Text);
+    dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Value,Lines,3,1,1,Qt::AlignCenter);
     delete info;
 
     Axislist.append(init);
@@ -245,6 +269,14 @@ void MainWindow::New_Control(DataforUI *info,QWidget *subpage,DataPull *data)
 {
     uint8_t node = info -> Node;
     uint8_t endpoint = info -> Endpoint;
+
+    if(data->Cluster != OnOff)//Now only support onoff
+    {
+        delete info;
+        delete data;
+        return;
+    }
+
     Components_Control init{node,endpoint,NULL,NULL};
 
     init.Value = new QLabel(subpage);
@@ -255,7 +287,7 @@ void MainWindow::New_Control(DataforUI *info,QWidget *subpage,DataPull *data)
     dynamic_cast<QGridLayout*>(subpage->layout())->addWidget(init.Onoff,Lines,3,1,1,Qt::AlignCenter);
     CountforEQ++;
     Controllist.append(init);
-    connect(init.Onoff,SIGNAL(clicked()),this,SLOT(Creat_Command_Button()));
+    connect(init.Onoff,SIGNAL(clicked()),this,SLOT(Creat_Command_Button()),Qt::DirectConnection);
     Update_Control(data);
     delete info;
     return;
@@ -289,7 +321,9 @@ void MainWindow::Creat_Command_Button()
 {
     QPushButton *Btn = dynamic_cast<QPushButton*>(this->sender());
     uint8_t max = Controllist.size();
-    uint8_t i,onoff;
+    uint8_t i;
+    float onoff;
+    uint8_t node,endpoint;
     for(i=0; i<max; i++)
     {
         if((Controllist.value(i)).Onoff == Btn)
@@ -298,10 +332,22 @@ void MainWindow::Creat_Command_Button()
     if(i == max)
         return;
     if(Btn->text()=="ON")
-        onoff = 1;
-    else
         onoff = 0;
-    GenerateMessage(Controllist[i].Node,Controllist[i].Endpoint,onoff);
+    else
+        onoff = 1;
+
+    node = Controllist.value(i).Node;
+    endpoint = Controllist.value(i).Endpoint;
+    max = DataList.size();
+    for(i=0; i<max; i++)
+    {
+        if((DataList.value(i).Node == node)&&(DataList.value(i).Endpoint == endpoint))
+            break;
+    }
+    if(i == max)
+        return;
+
+    GenerateMessage(DataList[i].Node,DataList[i].Endpoint,DataList[i].Datatype,DataList[i].Datalength,&onoff);
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -463,12 +509,13 @@ void MainWindow::Load_UI()
     connect(Temp_Humi,SIGNAL(clicked()),this,SLOT(SwitchPage_TH()));
     connect(Light,SIGNAL(clicked()),this,SLOT(SwitchPage_LI()));
     connect(Equipment,SIGNAL(clicked()),this,SLOT(SwitchPage_EQ()));
-    connect(this,SIGNAL(Creat_Axis(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Axis(DataforUI *,QWidget *,DataPull *)));
-    connect(this,SIGNAL(Fresh_Axis(DataPull *)),this,SLOT(Update_Axis(DataPull *)));
-    connect(this,SIGNAL(Creat_Array(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Array(DataforUI *,QWidget *,DataPull *)));
-    connect(this,SIGNAL(Fresh_Array(DataPull *)),this,SLOT(Update_Array(DataPull *)));
-    connect(this,SIGNAL(Creat_Control(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Control(DataforUI *,QWidget *,DataPull *)));
-    connect(this,SIGNAL(Fresh_Control(DataPull *)),this,SLOT(Update_Control(DataPull *)));
+    connect(this,SIGNAL(Creat_Axis(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Axis(DataforUI *,QWidget *,DataPull *)),Qt::DirectConnection);
+    connect(this,SIGNAL(Fresh_Axis(DataPull *)),this,SLOT(Update_Axis(DataPull *)),Qt::DirectConnection);
+    connect(this,SIGNAL(Creat_Array(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Array(DataforUI *,QWidget *,DataPull *)),Qt::DirectConnection);
+    connect(this,SIGNAL(Fresh_Array(DataPull *)),this,SLOT(Update_Array(DataPull *)),Qt::DirectConnection);
+    connect(this,SIGNAL(Creat_Control(DataforUI *,QWidget *,DataPull *)),this,SLOT(New_Control(DataforUI *,QWidget *,DataPull *)),Qt::DirectConnection);
+    connect(this,SIGNAL(Fresh_Control(DataPull *)),this,SLOT(Update_Control(DataPull *)),Qt::DirectConnection);
+
 
     WidgetP1 -> setLayout(InfraredLayout);
     WidgetP2 -> setLayout(Temp_HumiLayout);
@@ -504,20 +551,35 @@ void UI_Thread::UpdateUI(DataPull *Message)
     uint8_t control = Message->Controllable;
     uint8_t cluster = Message->Cluster;
     uint8_t endpoint = Message->Endpoint;
-    DataforUI *Info = new DataforUI{node,endpoint,control};
+    uint8_t datatype = Message->Datatype;
+    uint8_t datalen = Message->Datalength;
+    DataforUI *Info = new DataforUI{node,endpoint,control,datatype,datalen};
+
     switch(cluster)
     {
     case Temperature:
-        UI.Fresh_PageTH(Message,Info);
+        if(Message->Controllable == READWRITE)
+            UI.Fresh_PageEQ(Message,Info);
+        else
+            UI.Fresh_PageTH(Message,Info);
         break;
     case Humidity:
-        UI.Fresh_PageTH(Message,Info);
+        if(Message->Controllable == READWRITE)
+            UI.Fresh_PageEQ(Message,Info);
+        else
+            UI.Fresh_PageTH(Message,Info);
         break;
     case LightStrength:
-        UI.Fresh_PageLI(Message,Info);
+        if(Message->Controllable == READWRITE)
+            UI.Fresh_PageEQ(Message,Info);
+        else
+            UI.Fresh_PageLI(Message,Info);
         break;
     case TemperatureArray:
-        UI.Fresh_PageIR(Message,Info);
+        if(Message->Controllable == READWRITE)
+            UI.Fresh_PageEQ(Message,Info);
+        else
+            UI.Fresh_PageIR(Message,Info);
         break;
     case OnOff:
         UI.Fresh_PageEQ(Message,Info);
@@ -530,7 +592,6 @@ void UI_Thread::UpdateUI(DataPull *Message)
 
 UI_Thread::UI_Thread()
 {
-    MainWindow ui;
     this->start();
 }
 

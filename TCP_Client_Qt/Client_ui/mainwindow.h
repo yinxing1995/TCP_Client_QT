@@ -71,6 +71,7 @@ signals:
     void Fresh_Axis(DataPull *);
     void Creat_Control(DataforUI *,QWidget *,DataPull *);
     void Fresh_Control(DataPull *);
+    void Send_Message(QByteArray *);
 
 
 public:
@@ -128,6 +129,7 @@ private:
     void Load_PageLI();
     void Load_PageEQ();
     void Load_Status();
+    void GenerateMessage(uint8_t ,uint8_t ,uint8_t ,uint8_t ,float *);
 
 private slots:
     void SwitchPage_IR();
