@@ -26,6 +26,7 @@ void MainWindow::GenerateMessage(uint8_t node,uint8_t endpoint,uint8_t datatype,
     float p1[datalen];
     uint32_t p2[datalen];
     uint8_t i = datalen;
+    uint8_t checksum;
     if(datatype == _INT32)
     {
         for(i=0;i<datalen;i++)
@@ -43,10 +44,13 @@ void MainWindow::GenerateMessage(uint8_t node,uint8_t endpoint,uint8_t datatype,
         Message->append((char *)p1,datalen*sizeof(p1));
     }
     else return;
-
+    for(i=0;i<Message->size();i++)
+    {
+        checksum += Message->at(i);
+    }
+    Message->append(checksum);
     uint16_t FrameLen = Message->size() + sizeof(FrameLen);
-    char *p = (char *)&FrameLen;
-    Message->insert(0,p,sizeof(FrameLen));
+    Message->insert(0,(char *)&FrameLen,sizeof(FrameLen));
     Message->insert(0,FRAME_FLAG,strlen(FRAME_FLAG));
     qDebug() << Message->toHex();
     emit Send_Message(Message);
