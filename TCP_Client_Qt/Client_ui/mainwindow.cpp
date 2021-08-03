@@ -140,7 +140,8 @@ void MainWindow::Update_Array(DataPull *data)
 {
     uint8_t endpoint = data->Endpoint;
     uint8_t node = data->Node;
-    Components_Array temp{node,endpoint};
+    QVector<QLabel *> null;
+    Components_Array temp{node,endpoint,null};
     if(!Arraylist.contains(temp))
         return;
     temp = Arraylist.value(Arraylist.indexOf(temp));
@@ -233,7 +234,7 @@ void MainWindow::Update_Axis(DataPull *data)
 
     uint8_t endpoint = data->Endpoint;
     uint8_t node = data->Node;
-    Components_Axis temp{node,endpoint,NULL,NULL,NULL,NULL,NULL};
+    Components_Axis temp{node,endpoint,NULL,NULL,NULL,NULL,NULL,NULL};
     if(!Axislist.contains(temp))
         return;
     temp = Axislist.value(Axislist.indexOf(temp));
@@ -454,11 +455,10 @@ void MainWindow::Fresh_PageEQ(DataPull *data, DataforUI *info)
 void MainWindow::Load_Status()
 {
     Status = new QTextEdit(WidgetStatus);
-
-    QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
-    LayoutStatus -> addWidget(Status,0,0,1,1);
     Status -> setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
     Status -> document() -> setMaximumBlockCount(50);
+    QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
+    LayoutStatus -> addWidget(Status,0,0,1,1);
     Status -> setReadOnly(true);
     /*
     QFont *ft = new QFont;
@@ -637,7 +637,6 @@ void UI_Thread::run()
             //UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + Message->Data.toHex(' '));
             UI.Status -> append(QDateTime::currentDateTime().toString("[yyyy-M-dd hh:mm:ss]\r\n") + "Recv:" + " Node " + QString("%1").arg(Message->Node) + " Cluster " + QString("%1").arg(Message->Cluster));
             UI.Status -> moveCursor(QTextCursor::End);
-            msleep(2);
             UpdateUI(Message);
         }
     }
