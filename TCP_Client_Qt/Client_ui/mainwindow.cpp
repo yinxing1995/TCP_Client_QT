@@ -455,6 +455,7 @@ void MainWindow::Fresh_PageEQ(DataPull *data, DataforUI *info)
 void MainWindow::Load_Status()
 {
     Status = new QTextEdit(WidgetStatus);
+    WidgetStatus -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
     Status -> setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
     Status -> document() -> setMaximumBlockCount(50);
     QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
@@ -468,6 +469,30 @@ void MainWindow::Load_Status()
     Status->setFontPointSize(10);
 }
 
+void MainWindow::Load_Alarm()
+{
+    QVBoxLayout *layout = new QVBoxLayout(WidgetAlarm);
+    QLabel *Image = new QLabel(WidgetAlarm);
+    QLabel *Word = new QLabel;
+    WidgetAlarm -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
+    Image -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
+    Image ->setScaledContents(true);
+    layout -> addWidget(Image,Qt::AlignCenter);
+    layout -> addWidget(Word,Qt::AlignBottom);
+
+    QPixmap *pixmap = new QPixmap("risk.png");
+    QPixmap fixedmap = pixmap -> scaled(Image->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+
+    Image -> setPixmap(fixedmap);
+    Word -> setText("Risk!");
+    Word -> setAlignment(Qt::AlignCenter);
+}
+
+void MainWindow::Fresh_Alarm(DataPull * data)
+{
+    delete data;
+}
+
 void MainWindow::Load_UI()
 {
     MainWidget = new QWidget;
@@ -476,6 +501,7 @@ void MainWindow::Load_UI()
     WidgetP3 = new QWidget;
     WidgetP4 = new QWidget;
     WidgetStatus = new QWidget;
+    WidgetAlarm = new QWidget;
 
     StackedWidget = new QStackedWidget(MainWidget);
     GridLayout = new QGridLayout(MainWidget);
@@ -505,9 +531,11 @@ void MainWindow::Load_UI()
     GridLayout -> addWidget(Light,2,3,1,1,Qt::AlignCenter);
     GridLayout -> addWidget(Equipment,3,3,1,1,Qt::AlignCenter);
     GridLayout -> addWidget(WidgetStatus,4,0,1,3);
+    GridLayout -> addWidget(WidgetAlarm,4,3,1,1);
     GridLayout -> addWidget(StackedWidget,0,0,4,3);
 
     WidgetStatus -> setStyleSheet("background-color:green;");
+    WidgetAlarm -> setStyleSheet("background-color:purple;");
     StackedWidget-> setStyleSheet("background-color:grey;");
 
     StackedWidget -> addWidget(WidgetP1);
@@ -520,6 +548,7 @@ void MainWindow::Load_UI()
     Load_PageLI();
     Load_PageEQ();
     Load_Status();
+    Load_Alarm();
 
     connect(Infrared,SIGNAL(clicked()),this,SLOT(SwitchPage_IR()));
     connect(Temp_Humi,SIGNAL(clicked()),this,SLOT(SwitchPage_TH()));

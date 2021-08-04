@@ -86,6 +86,7 @@ public:
     void Fresh_PageLI(DataPull *,DataforUI *);
     void Fresh_PageEQ(DataPull *,DataforUI *);
     void Fresh_Status(DataPull *,DataforUI *);
+    void Fresh_Alarm(DataPull *);
 
 
 private:
@@ -119,6 +120,7 @@ private:
     QWidget *WidgetP3;
     QWidget *WidgetP4;
     QWidget *WidgetStatus;
+    QWidget *WidgetAlarm;
 
     //QList<Components_Axis> THlist;
     //struct Components Creat_axis(DataforUI *, uint8_t, QWidget *);
@@ -130,6 +132,7 @@ private:
     void Load_PageEQ();
     void Load_Status();
     void GenerateMessage(uint8_t ,uint8_t ,uint8_t ,uint8_t ,float *);
+    void Load_Alarm();
 
 private slots:
     void SwitchPage_IR();
