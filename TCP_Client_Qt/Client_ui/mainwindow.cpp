@@ -26,7 +26,7 @@ void MainWindow::GenerateMessage(uint8_t node,uint8_t endpoint,uint8_t datatype,
     float p1[datalen];
     uint32_t p2[datalen];
     uint8_t i = datalen;
-    uint8_t checksum;
+    uint8_t checksum = 0;
     if(datatype == _INT32)
     {
         for(i=0;i<datalen;i++)
@@ -48,10 +48,11 @@ void MainWindow::GenerateMessage(uint8_t node,uint8_t endpoint,uint8_t datatype,
     {
         checksum += Message->at(i);
     }
-    Message->append(checksum);
-    uint16_t FrameLen = Message->size() + sizeof(FrameLen);
+    uint16_t FrameLen = Message->size() + sizeof(FrameLen) +sizeof(checksum);
     Message->insert(0,(char *)&FrameLen,sizeof(FrameLen));
     Message->insert(0,FRAME_FLAG,strlen(FRAME_FLAG));
+    checksum += FrameLen;
+    Message->append(checksum);
     qDebug() << Message->toHex();
     emit Send_Message(Message);
 }
@@ -64,7 +65,12 @@ static void CovertKtoRG (T *component, float temperature)
     if(temperature <= 0)
         temperature = 0;
     else if(temperature >= 120)
+    {
         temperature = 120;
+        R = 255;
+        B = 255;
+        G = 0;
+    }
 
     if(temperature < 20)
     {
@@ -455,7 +461,7 @@ void MainWindow::Fresh_PageEQ(DataPull *data, DataforUI *info)
 void MainWindow::Load_Status()
 {
     Status = new QTextEdit(WidgetStatus);
-    WidgetStatus -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
+    //WidgetStatus -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
     Status -> setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
     Status -> document() -> setMaximumBlockCount(50);
     QGridLayout *LayoutStatus = new QGridLayout(WidgetStatus);
@@ -471,21 +477,27 @@ void MainWindow::Load_Status()
 
 void MainWindow::Load_Alarm()
 {
-    QVBoxLayout *layout = new QVBoxLayout(WidgetAlarm);
-    QLabel *Image = new QLabel(WidgetAlarm);
-    QLabel *Word = new QLabel;
-    WidgetAlarm -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
-    Image -> setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
+    QGridLayout *layout = new QGridLayout(WidgetAlarm);
+    QLabel *Image = new QLabel();
+    QLabel *Word = new QLabel();
+    //WidgetAlarm -> setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Preferred);
+
+    Image -> setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+    Word -> setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
+    Image -> setAlignment(Qt::AlignCenter);
+    Word -> setAlignment(Qt::AlignCenter);
     Image ->setScaledContents(true);
-    layout -> addWidget(Image,Qt::AlignCenter);
-    layout -> addWidget(Word,Qt::AlignBottom);
+
+    layout -> addWidget(Image,0,0,2,2,Qt::AlignCenter);
+    layout -> addWidget(Word,0,2,2,1,Qt::AlignCenter);
 
     QPixmap *pixmap = new QPixmap("risk.png");
-    QPixmap fixedmap = pixmap -> scaled(Image->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+    *pixmap = pixmap -> scaled(Image -> size(),Qt::KeepAspectRatio,Qt::SmoothTransformation);
 
-    Image -> setPixmap(fixedmap);
+    Image -> setPixmap(*pixmap);
     Word -> setText("Risk!");
-    Word -> setAlignment(Qt::AlignCenter);
+    Status->setFontPointSize(10);
+
 }
 
 void MainWindow::Fresh_Alarm(DataPull * data)
@@ -534,8 +546,9 @@ void MainWindow::Load_UI()
     GridLayout -> addWidget(WidgetAlarm,4,3,1,1);
     GridLayout -> addWidget(StackedWidget,0,0,4,3);
 
-    WidgetStatus -> setStyleSheet("background-color:green;");
-    WidgetAlarm -> setStyleSheet("background-color:purple;");
+
+    WidgetStatus -> setStyleSheet("background-color:forestgreen;");
+    WidgetAlarm -> setStyleSheet("background-color:burlywood;");
     StackedWidget-> setStyleSheet("background-color:grey;");
 
     StackedWidget -> addWidget(WidgetP1);
@@ -659,7 +672,8 @@ void UI_Thread::run()
         Message = ProcessMessage();
         if(!Message)
         {
-            msleep(2);
+            //msleep(2);
+            continue;
         }
         else
         {
