@@ -322,7 +322,7 @@ void MainWindow::Update_Control(DataPull * data)
     temp = Controllist.value(Controllist.indexOf(temp));
     char p[30];
     sprintf(p,"Node = %d Endpoint = %d State = ",data->Node,data->Endpoint);
-    if(data->Data.constData() == 0)
+    if(*(uint32_t *)data->Data.constData() == 0)
     {
         strcat(p,"OFF");
         temp.Onoff->setText("Open");
@@ -350,7 +350,7 @@ void MainWindow::Creat_Command_Button()
     }
     if(i == max)
         return;
-    if(Btn->text()=="ON")
+    if(Btn->text()=="Close")
         onoff = 0;
     else
         onoff = 1;
